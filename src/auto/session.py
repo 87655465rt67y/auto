@@ -1,0 +1,50 @@
+import time
+
+from playwright.sync_api import BrowserContext, Page, Playwright, sync_playwright
+
+from auto.auth import is_login_page, login
+from auto.browser import launch_browser_context
+from auto.config import Settings, get_settings
+
+
+class FirstwatchSession:
+    """Manages persistent browser session for Firstwatch."""
+
+    def __init__(self, settings: Settings | None = None) -> None:
+        self.settings = settings or get_settings()
+        self._playwright: Playwright | None = None
+        self._context: BrowserContext | None = None
+        self._page: Page | None = None
+
+    @property
+    def page(self) -> Page:
+        if self._page is None:
+            raise RuntimeError("Session not started. Call start() first.")
+        return self._page
+
+    def start(self) -> Page:
+        self._playwright = sync_playwright().start()
+        self._context = launch_browser_context(
+            self._playwright, self.settings
+        )
+        self._page = (
+            self._context.pages[0]
+            if self._context.pages
+            else self._context.new_page()
+        )
+        self.navigate(self.settings.base_url)
+        return self._page
+
+    def navigate(self, url: str) -> None:
+        if self._page is None:
+            raise RuntimeError("Session not started. Call start() first.")
+        self._page.goto(url, wait_until="domcontentloaded")
+        time.sleep(self.settings.nav_delay)
+        if is_login_page(self._page):
+            login(self._page, self.settings)
+
+    def close(self) -> None:
+        if self._context is not None:
+            self._context.close()
+        if self._playwright is not None:
+            self._playwright.stop()
