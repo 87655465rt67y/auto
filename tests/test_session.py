@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from auto.config import Settings
+from auto.models import BrandItem
 from auto.session import FirstwatchSession
 
 
@@ -61,11 +62,26 @@ def test_session_resolve_city_errors(
     session = FirstwatchSession()
     session._page = MagicMock()
 
-    mock_select.return_value = True
+    brand = BrandItem(brand="1216", platform="AMAZONNOW")
+    mock_select.return_value = (True, [brand])
     mock_suggest.return_value = 2
 
-    assert session.resolve_city_errors() == 2
+    brands, count = session.resolve_city_errors()
+    assert brands == [brand]
+    assert count == 2
     mock_select.assert_called_once_with(session.page)
     mock_suggest.assert_called_once_with(
         session.page, session.settings.post_resolve_delay
     )
+
+
+@patch("auto.session.select_cities_and_open_modal")
+def test_session_resolve_city_errors_not_ok(mock_select: MagicMock) -> None:
+    session = FirstwatchSession()
+    session._page = MagicMock()
+
+    mock_select.return_value = (False, [])
+
+    brands, count = session.resolve_city_errors()
+    assert brands == []
+    assert count == 0

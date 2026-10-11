@@ -6,6 +6,7 @@ from auto.auth import is_login_page, login
 from auto.browser import launch_browser_context
 from auto.cities import select_cities_and_open_modal, suggest_and_resolve
 from auto.config import Settings, get_settings
+from auto.models import BrandItem
 
 
 class FirstwatchSession:
@@ -25,14 +26,9 @@ class FirstwatchSession:
 
     def start(self) -> Page:
         self._playwright = sync_playwright().start()
-        self._context = launch_browser_context(
-            self._playwright, self.settings
-        )
-        self._page = (
-            self._context.pages[0]
-            if self._context.pages
-            else self._context.new_page()
-        )
+        self._context = launch_browser_context(self._playwright, self.settings)
+        pages = self._context.pages
+        self._page = pages[0] if pages else self._context.new_page()
         self.navigate(self.settings.base_url)
         return self._page
 
@@ -46,10 +42,11 @@ class FirstwatchSession:
             self._page.goto(url, wait_until="domcontentloaded")
             time.sleep(self.settings.nav_delay)
 
-    def resolve_city_errors(self) -> int:
-        if not select_cities_and_open_modal(self.page):
-            return 0
-        return suggest_and_resolve(
+    def resolve_city_errors(self) -> tuple[list[BrandItem], int]:
+        ok, brands = select_cities_and_open_modal(self.page)
+        if not ok:
+            return [], 0
+        return brands, suggest_and_resolve(
             self.page, self.settings.post_resolve_delay
         )
 

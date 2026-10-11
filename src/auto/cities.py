@@ -3,9 +3,22 @@ import time
 
 from playwright.sync_api import Page
 
+from auto.models import BrandItem
 
-def select_cities_and_open_modal(page: Page) -> bool:
-    """Switch to Cities tab, select all errors, and open modal."""
+
+def extract_selected_brands(page: Page) -> list[BrandItem]:
+    brands: list[BrandItem] = []
+    for row in page.locator("table tbody tr").all():
+        cb = row.locator('button[role="checkbox"]')
+        if not cb.count() or cb.get_attribute("data-state") == "checked":
+            b = row.locator("td").nth(2).inner_text().strip()
+            p = row.locator("td").nth(3).inner_text().strip()
+            if b:
+                brands.append(BrandItem(brand=b, platform=p))
+    return brands
+
+
+def select_cities_and_open_modal(page: Page) -> tuple[bool, list[BrandItem]]:
     tab = page.locator('button[role="tab"]:has-text("Cities")')
     tab.click()
     time.sleep(2.0)
@@ -13,21 +26,21 @@ def select_cities_and_open_modal(page: Page) -> bool:
     badge_text = badge.inner_text().strip() if badge.count() else "0"
     digits = re.findall(r"\d+", badge_text)
     if not digits or int(digits[0]) == 0:
-        return False
+        return False, []
     cb = page.locator('button[role="checkbox"][aria-label="Select all"]')
     if cb.count() and cb.get_attribute("data-state") != "checked":
         cb.click()
         time.sleep(1.0)
+    brands = extract_selected_brands(page)
     for btn in page.locator('button:has-text("Resolve all")').all():
         if btn.is_enabled():
             btn.click()
             break
     time.sleep(3.0)
-    return True
+    return True, brands
 
 
 def suggest_and_resolve(page: Page, post_resolve_delay: float = 10.0) -> int:
-    """Trigger AI suggestion and click enabled Resolve button."""
     dialog = page.locator('div[role="dialog"]')
     dialog.locator('button:has-text("Suggest with AI")').click()
     time.sleep(5.0)
