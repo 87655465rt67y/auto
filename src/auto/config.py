@@ -8,7 +8,7 @@ from decouple import config
 class Settings:
     base_url: str = config(
         "FIRSTWATCH_BASE_URL",
-        default="https://firstwatch.dcluttr.ai/",
+        default="https://firstwatch.dcluttr.ai/data/data-upload/1p-mapping-errors",
     )
     login_url: str = config(
         "FIRSTWATCH_LOGIN_URL",
@@ -19,6 +19,11 @@ class Settings:
     nav_delay: float = config(
         "FIRSTWATCH_NAV_DELAY",
         default=3.0,
+        cast=float,
+    )
+    post_resolve_delay: float = config(
+        "FIRSTWATCH_POST_RESOLVE_DELAY",
+        default=10.0,
         cast=float,
     )
     profile_dir: Path = Path(

@@ -4,6 +4,7 @@ from playwright.sync_api import BrowserContext, Page, Playwright, sync_playwrigh
 
 from auto.auth import is_login_page, login
 from auto.browser import launch_browser_context
+from auto.cities import select_cities_and_open_modal, suggest_and_resolve
 from auto.config import Settings, get_settings
 
 
@@ -42,6 +43,15 @@ class FirstwatchSession:
         time.sleep(self.settings.nav_delay)
         if is_login_page(self._page):
             login(self._page, self.settings)
+            self._page.goto(url, wait_until="domcontentloaded")
+            time.sleep(self.settings.nav_delay)
+
+    def resolve_city_errors(self) -> int:
+        if not select_cities_and_open_modal(self.page):
+            return 0
+        return suggest_and_resolve(
+            self.page, self.settings.post_resolve_delay
+        )
 
     def close(self) -> None:
         if self._context is not None:

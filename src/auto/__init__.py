@@ -1,3 +1,3 @@
-from auto.cli import main
+from auto.main import main, run
 
-__all__ = ["main"]
+__all__ = ["main", "run"]

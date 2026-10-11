@@ -1,13 +1,18 @@
 # Firstwatch Automation (`auto`)
 
-Playwright automation and persistent session manager for [Firstwatch](https://firstwatch.dcluttr.ai/).
+Playwright automation for [Firstwatch](https://firstwatch.dcluttr.ai/) to automatically resolve 1P City Mapping Errors.
 
-## Features
-- **Persistent Session State**: Maintains cookies, tokens, and browser state in `.auth/profile` so you stay logged in across runs.
-- **Auto Re-Login Guard**: Detects unauthenticated redirects back to `/login` and automatically re-authenticates.
-- **Generous SPA Loading Delay**: Enforces a 3.0-second delay after all navigations and actions to ensure single-page application data renders completely.
-- **Interactive Headful CLI**: Keeps the browser window open and active with an interactive prompt for running ad-hoc navigations.
-- **NASA JPL Rule 4 Compliant**: All production modules and functions fit on a single printed sheet (≤ 60 lines).
+## Workflow
+1. Navigates to `https://firstwatch.dcluttr.ai/data/data-upload/1p-mapping-errors`.
+2. Preserves persistent browser session in `.auth/profile` (with automatic re-login if needed).
+3. Enforces a 3.0-second SPA loading delay.
+4. Clicks the **Cities** tab and inspects the error count badge.
+5. If errors > 0:
+   - Selects the **Select all** checkbox.
+   - Clicks **Resolve all** to open the modal.
+   - Clicks **Suggest with AI** and waits 5 seconds for suggestions.
+   - Detects the enabled **Resolve N cities** button ($N > 0$), clicks it to submit resolution, and waits at least 10 seconds for backend changes to settle.
+6. Closes the browser and exits automatically.
 
 ## Getting Started
 
@@ -19,35 +24,29 @@ uv sync
 ```
 
 ### Running the Automation
-Launch the headful interactive session:
+Execute the automated runner:
 
 ```powershell
 uv run auto
 ```
 
-Or execute directly via the Python module:
+Or via the Python module:
 
 ```powershell
-uv run python -m auto.cli
+uv run python -m auto
 ```
-
-### CLI Commands
-Once the session launches, an interactive prompt will be displayed:
-- `goto <url>`: Navigate to any Firstwatch URL (applies 3s load delay and login check).
-- `reload`: Reload the current page.
-- `url`: Display the current page URL.
-- `exit` / `quit`: Close the browser and terminate the session cleanly.
 
 ## Configuration
 Options can be configured via environment variables or a `.env` file:
 
 | Variable | Default | Description |
 |---|---|---|
-| `FIRSTWATCH_BASE_URL` | `https://firstwatch.dcluttr.ai/` | Base target URL |
+| `FIRSTWATCH_BASE_URL` | `https://firstwatch.dcluttr.ai/data/data-upload/1p-mapping-errors` | Target URL |
 | `FIRSTWATCH_LOGIN_URL` | `https://firstwatch.dcluttr.ai/login` | Login page URL |
 | `FIRSTWATCH_EMAIL` | `kshitiz@dcluttr.ai` | Sign-in email address |
 | `FIRSTWATCH_PASSWORD` | `dev@123456` | Sign-in password |
 | `FIRSTWATCH_NAV_DELAY` | `3.0` | Navigation pause in seconds |
+| `FIRSTWATCH_POST_RESOLVE_DELAY` | `10.0` | Post-resolve wait in seconds |
 | `FIRSTWATCH_PROFILE_DIR` | `.auth/profile` | Persistent browser profile directory |
 | `FIRSTWATCH_HEADLESS` | `False` | Run browser in headless mode |
 

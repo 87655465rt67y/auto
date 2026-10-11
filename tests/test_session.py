@@ -29,7 +29,9 @@ def test_session_start_and_close(
 
     mock_context = MagicMock()
     mock_page = MagicMock()
-    mock_page.url = "https://firstwatch.dcluttr.ai/"
+    mock_page.url = (
+        "https://firstwatch.dcluttr.ai/data/data-upload/1p-mapping-errors"
+    )
     locator = MagicMock()
     locator.is_visible.return_value = False
     mock_page.locator.return_value = locator
@@ -42,9 +44,28 @@ def test_session_start_and_close(
 
     assert page == mock_page
     mock_page.goto.assert_called_with(
-        "https://firstwatch.dcluttr.ai/", wait_until="domcontentloaded"
+        settings.base_url, wait_until="domcontentloaded"
     )
 
     session.close()
     mock_context.close.assert_called_once()
     mock_pw_instance.stop.assert_called_once()
+
+
+@patch("auto.session.suggest_and_resolve")
+@patch("auto.session.select_cities_and_open_modal")
+def test_session_resolve_city_errors(
+    mock_select: MagicMock,
+    mock_suggest: MagicMock,
+) -> None:
+    session = FirstwatchSession()
+    session._page = MagicMock()
+
+    mock_select.return_value = True
+    mock_suggest.return_value = 2
+
+    assert session.resolve_city_errors() == 2
+    mock_select.assert_called_once_with(session.page)
+    mock_suggest.assert_called_once_with(
+        session.page, session.settings.post_resolve_delay
+    )
